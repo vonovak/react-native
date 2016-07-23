@@ -41,6 +41,8 @@ public class ReadableNativeMap extends NativeMap implements ReadableMap {
   @Override
   public native int getInt(String name);
   @Override
+  public native long getLong(String name);
+  @Override
   public native String getString(String name);
   @Override
   public native ReadableNativeArray getArray(String name);

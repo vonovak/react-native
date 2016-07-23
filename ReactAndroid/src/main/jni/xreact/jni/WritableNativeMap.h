@@ -27,6 +27,7 @@ struct WritableNativeMap : jni::HybridClass<WritableNativeMap, ReadableNativeMap
   void putBoolean(std::string key, bool val);
   void putDouble(std::string key, double val);
   void putInt(std::string key, int val);
+  void putLong(std::string key, long val);
   void putString(std::string key, jni::alias_ref<jstring> val);
   void putNativeArray(std::string key, jni::alias_ref<WritableNativeArray::jhybridobject> val);
   void putNativeMap(std::string key, jni::alias_ref<jhybridobject> val);
