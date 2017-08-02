@@ -438,13 +438,19 @@ class CalendarManager: NSObject {
   func addEvent(name: String, location: String, date: NSNumber) -> Void {
     // Date is ready to use!
   }
+  
+  override func constantsToExport() -> [String: Any]! {
+    return ["someKey": "someValue"]
+  }
 
 }
 ```
 
 > **NOTE**: It is important to use the @objc modifiers to ensure the class and functions are exported properly to the Objective-C runtime.
 
-Then create a private implementation file that will register the required information with the React Native bridge:
+
+For those of you new to Swift and Objective-C, whenever you [mix the two languages in an iOS project](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/BuildingCocoaApps/MixandMatch.html), you will also need an additional bridging file, known as a bridging header, to expose the Objective-C files to Swift. Xcode will offer to create this header file for you if you add your Swift file to your app through the Xcode `File>New File` menu option. You will need to import `RCTBridgeModule.h` in this header file. An example of a bridging header is given below.
+
 
 ```objectivec
 // CalendarManagerBridge.m
@@ -455,13 +461,6 @@ Then create a private implementation file that will register the required inform
 RCT_EXTERN_METHOD(addEvent:(NSString *)name location:(NSString *)location date:(nonnull NSNumber *)date)
 
 @end
-```
-
-For those of you new to Swift and Objective-C, whenever you [mix the two languages in an iOS project](https://developer.apple.com/library/prerelease/ios/documentation/Swift/Conceptual/BuildingCocoaApps/MixandMatch.html), you will also need an additional bridging file, known as a bridging header, to expose the Objective-C files to Swift. Xcode will offer to create this header file for you if you add your Swift file to your app through the Xcode `File>New File` menu option. You will need to import `RCTBridgeModule.h` in this header file.
-
-```objectivec
-// CalendarManager-Bridging-Header.h
-#import <React/RCTBridgeModule.h>
 ```
 
 You can also use `RCT_EXTERN_REMAP_MODULE` and `RCT_EXTERN_REMAP_METHOD` to alter the JavaScript name of the module or methods you are exporting. For more information see [`RCTBridgeModule`](https://github.com/facebook/react-native/blob/master/React/Base/RCTBridgeModule.h).
