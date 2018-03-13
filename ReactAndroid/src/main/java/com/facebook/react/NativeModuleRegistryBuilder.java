@@ -33,9 +33,9 @@ public class NativeModuleRegistryBuilder {
   private final Map<String, Class<? extends NativeModule>> namesToType = new HashMap<>();
 
   public NativeModuleRegistryBuilder(
-    ReactApplicationContext reactApplicationContext,
-    ReactInstanceManager reactInstanceManager,
-    boolean lazyNativeModulesEnabled) {
+          ReactApplicationContext reactApplicationContext,
+          ReactInstanceManager reactInstanceManager,
+          boolean lazyNativeModulesEnabled) {
     mReactApplicationContext = reactApplicationContext;
     mReactInstanceManager = reactInstanceManager;
     mLazyNativeModulesEnabled = lazyNativeModulesEnabled;
@@ -45,13 +45,13 @@ public class NativeModuleRegistryBuilder {
     if (mLazyNativeModulesEnabled) {
       if (!(reactPackage instanceof LazyReactPackage)) {
         throw new IllegalStateException("Lazy native modules requires all ReactPackage to " +
-          "inherit from LazyReactPackage");
+                "inherit from LazyReactPackage");
       }
 
       LazyReactPackage lazyReactPackage = (LazyReactPackage) reactPackage;
       List<ModuleSpec> moduleSpecs = lazyReactPackage.getNativeModules(mReactApplicationContext);
       Map<Class, ReactModuleInfo> reactModuleInfoMap = lazyReactPackage.getReactModuleInfoProvider()
-        .getReactModuleInfos();
+              .getReactModuleInfos();
 
       for (ModuleSpec moduleSpec : moduleSpecs) {
         Class<? extends NativeModule> type = moduleSpec.getType();
@@ -60,12 +60,12 @@ public class NativeModuleRegistryBuilder {
         if (reactModuleInfo == null) {
           if (BaseJavaModule.class.isAssignableFrom(type)) {
             throw new IllegalStateException("Native Java module " + type.getSimpleName() +
-              " should be annotated with @ReactModule and added to a @ReactModuleList.");
+                    " should be annotated with @ReactModule and added to a @ReactModuleList.");
           }
           NativeModule module;
           ReactMarker.logMarker(
-            ReactMarkerConstants.CREATE_MODULE_START,
-            moduleSpec.getType().getName());
+                  ReactMarkerConstants.CREATE_MODULE_START,
+                  moduleSpec.getType().getName());
           try {
             module = moduleSpec.getProvider().get();
           } finally {
@@ -77,31 +77,20 @@ public class NativeModuleRegistryBuilder {
         }
 
         String name = moduleHolder.getName();
-        if (namesToType.containsKey(name)) {
-          Class<? extends NativeModule> existingNativeModule = namesToType.get(name);
-          if (!moduleHolder.getCanOverrideExistingModule()) {
-            throw new IllegalStateException("Native module " + type.getSimpleName() +
-              " tried to override " + existingNativeModule.getSimpleName() + " for module name " +
-              name + ". If this was your intention, set canOverrideExistingModule=true");
-          }
-
-          mModules.remove(existingNativeModule);
-        }
-
-        namesToType.put(name, type);
-        mModules.put(type, moduleHolder);
+        boolean canOverride = moduleHolder.getCanOverrideExistingModule();
+        putModuleTypeAndHolderToModuleMaps(type, name, canOverride, moduleHolder);
       }
     } else {
       FLog.d(
-        ReactConstants.TAG,
-        reactPackage.getClass().getSimpleName() +
-          " is not a LazyReactPackage, falling back to old version.");
+              ReactConstants.TAG,
+              reactPackage.getClass().getSimpleName() +
+                      " is not a LazyReactPackage, falling back to old version.");
       List<NativeModule> nativeModules;
       if (reactPackage instanceof ReactInstancePackage) {
         ReactInstancePackage reactInstancePackage = (ReactInstancePackage) reactPackage;
         nativeModules = reactInstancePackage.createNativeModules(
-            mReactApplicationContext,
-            mReactInstanceManager);
+                mReactApplicationContext,
+                mReactInstanceManager);
       } else {
         nativeModules = reactPackage.createNativeModules(mReactApplicationContext);
       }
@@ -114,19 +103,28 @@ public class NativeModuleRegistryBuilder {
   public void addNativeModule(NativeModule nativeModule) {
     String name = nativeModule.getName();
     Class<? extends NativeModule> type = nativeModule.getClass();
-    if (namesToType.containsKey(name)) {
-      Class<? extends NativeModule> existingModule = namesToType.get(name);
-      if (!nativeModule.canOverrideExistingModule()) {
+    boolean canOverride = nativeModule.canOverrideExistingModule();
+
+    putModuleTypeAndHolderToModuleMaps(type, name, canOverride, new ModuleHolder(nativeModule));
+  }
+
+  private void putModuleTypeAndHolderToModuleMaps(Class<? extends NativeModule> type, String underName,
+                                                  boolean canOverrideExistingModule,
+                                                  ModuleHolder moduleHolder) throws IllegalStateException {
+    if (namesToType.containsKey(underName)) {
+      Class<? extends NativeModule> existingNativeModule = namesToType.get(underName);
+      if (!canOverrideExistingModule) {
         throw new IllegalStateException("Native module " + type.getSimpleName() +
-          " tried to override " + existingModule.getSimpleName() + " for module name " +
-          name + ". If this was your intention, set canOverrideExistingModule=true");
+                " tried to override " + existingNativeModule.getSimpleName() + " for module name " +
+                underName + ". Check the getPackages() method in MainApplications.java, it might be " +
+                "that module is being created twice. " +
+                "If this was your intention, set canOverrideExistingModule=true");
       }
 
-      mModules.remove(existingModule);
+      mModules.remove(existingNativeModule);
     }
 
-    namesToType.put(name, type);
-    ModuleHolder moduleHolder = new ModuleHolder(nativeModule);
+    namesToType.put(underName, type);
     mModules.put(type, moduleHolder);
   }
 
@@ -139,8 +137,8 @@ public class NativeModuleRegistryBuilder {
     }
 
     return new NativeModuleRegistry(
-      mReactApplicationContext,
-      mModules,
-      batchCompleteListenerModules);
+            mReactApplicationContext,
+            mModules,
+            batchCompleteListenerModules);
   }
 }
